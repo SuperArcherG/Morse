@@ -53,7 +53,7 @@ class Timer:
         self.start_time = None
 # Initialize the timer instance
 timer = Timer()
-triggered = False
+triggered = True
 def down():
     # Code to be executed when mouse button is pressed
     if b:
@@ -78,7 +78,25 @@ def sP():
         f.writelines(data)
     for i in data:
         data.pop()
-
+        
+def playback(dirs):
+    # for _ in range(10):
+    #     GPIO.output(OUT_PIN,GPIO.HIGH)
+    #     time.sleep(0.1)
+    #     GPIO.output(OUT_PIN,GPIO.LOW)
+    #     time.sleep(0.1)
+    print(dirs)
+    text = open(dirs).read()
+    print(text)
+    textsplit = text.split(";")
+    textsplit.pop()
+    for line in textsplit:
+        print(line)
+        split = line.split(" ")
+        command = split[0]
+        time2 = split[1]
+        GPIO.output(OUT_PIN,GPIO.HIGH if (command == "d") else GPIO.LOW)
+        time.sleep(float(time2))
 # Game loop
 running = True
 timer.start()
@@ -86,6 +104,21 @@ prev = 0
 try:
     while running:
         input =  GPIO.input(IN_PIN)
+        if triggered:
+            txt_files = [f for f in os.listdir(os.getcwd()) if f.endswith('.txt') and f.startswith('r.')]
+            for i,t in enumerate(txt_files):
+                txt_files[i] =t.replace("r.","")
+            txt_files = sorted(txt_files, key=lambda x: float(x.rsplit('.', 2)[0]))
+            for i,t in enumerate(txt_files):
+                name = txt_files[i]
+                print(name)
+                file = open(os.getcwd()+"/r."+name,"r").read()
+                playback(os.getcwd()+"/r."+name)
+                os.remove(os.getcwd()+"/r."+name)
+        if triggered:
+            timer.reset()
+            timer.start()
+            
         if input == 1 and input != prev:
             down()
             timer.reset()
@@ -102,6 +135,7 @@ try:
         if timer.elapsed() > 5 and not triggered and data[data.__len__() - 1].split(" ")[0] != "d":
             sP()
             triggered = True
+        
 except KeyboardInterrupt:
+    GPIO.output(OUT_PIN, GPIO.LOW)
     GPIO.cleanup()
-    print("Program was terminated by the user.")
